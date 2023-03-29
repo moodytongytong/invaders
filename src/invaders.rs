@@ -11,6 +11,12 @@ pub struct Invader {
     points: u16,
 }
 
+impl Invader {
+    pub fn new(x: usize, y: usize) -> Self {
+        Invader { x, y, points: 1 }
+    }
+}
+
 pub struct Invaders {
     pub army: Vec<Invader>,
     pub total_count: usize,

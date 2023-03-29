@@ -41,3 +41,25 @@ impl Drawable for Shot {
         frame[self.x][self.y] = if self.exploding { '*' } else { '|' };
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::NUM_COLS;
+
+    use super::*;
+
+    #[test]
+    fn shot_created_with_correct_attributes() {
+        let shot = Shot::new(4, 5);
+        assert_eq!(shot.x, 4);
+        assert_eq!(shot.y, 5);
+        assert_eq!(shot.exploding, false);
+        assert_eq!(shot.timer, Timer::from_millis(50))
+    }
+
+    fn shot_explodes_if_goes_off_the_y_axis() {
+        
+    }
+
+}
+
