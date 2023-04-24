@@ -122,3 +122,34 @@ impl Drawable for Invaders {
         }
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+
+    #[test]
+    fn test_an_invader_army_correctly_created() {
+        let army = Invaders::new();
+        assert_eq!(army.total_count, 72);
+    }
+
+    #[test]
+    fn invaders_move_right_initially() {
+        let mut host = Invaders::new();
+        let x : usize = host.army[0].x;
+        host.update(Duration::from_millis(2001));
+        assert_eq!(host.army[0].x, x + 1);
+    }
+
+    #[test]
+    fn invaders_move_down_correctly() {
+        let mut host = Invaders::new();
+        let y : usize = host.army[0].y;
+        assert_eq!(host.army[0].x, 0);
+        /// for loop for 8 iterations
+        host.update(Duration::from_millis(2000));
+        // assert_eq!(host.army[0].x, 0);
+        assert_eq!(host.army[0].y, y + 1);
+    }
+}

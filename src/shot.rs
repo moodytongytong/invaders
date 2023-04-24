@@ -44,8 +44,7 @@ impl Drawable for Shot {
 
 #[cfg(test)]
 mod tests {
-    use crate::NUM_COLS;
-
+    use crate::SHOT_PERIOD;
     use super::*;
 
     #[test]
@@ -57,9 +56,22 @@ mod tests {
         assert_eq!(shot.timer, Timer::from_millis(50))
     }
 
-    fn shot_explodes_if_goes_off_the_y_axis() {
-        
+    #[test]
+    fn shot_moves_up_the_y_axis() {
+        const X : usize = 0;
+        const Y : usize = 5;
+        let mut shot = Shot::new(X, Y);
+        shot.update(Duration::from_millis(SHOT_PERIOD + 1));
+        assert_eq!(shot.y, Y - 1);
     }
 
+    #[test]
+    fn shot_dead_at_zero_on_y_axis() {
+        const X : usize = 0;
+        const Y : usize = 1;
+        let mut shot = Shot::new(X, Y);
+        shot.update(Duration::from_millis(SHOT_PERIOD + 1));
+        assert!(shot.dead());
+    }
 }
 
