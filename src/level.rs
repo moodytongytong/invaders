@@ -41,6 +41,7 @@ impl Drawable for Level {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::frame::new_frame;
 
     #[test]
     fn should_increment_level_and_return_false() {
@@ -63,5 +64,14 @@ mod tests {
         // then
         assert_eq!(true, actual);
         assert_eq!(MAX_LEVEL, level.level);
+    }
+
+    #[test]
+    fn levels_drawn_into_the_frame_correctly() {
+        let mut frame = new_frame();
+        let level = Level::new();
+        level.draw(&mut frame);
+        assert_eq!(frame[27][0], '0');
+        assert_eq!(frame[28][0], '1');
     }
 }

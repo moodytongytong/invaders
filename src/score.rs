@@ -27,3 +27,22 @@ impl Drawable for Score {
         }
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::frame::{new_frame, self};
+
+    #[test]
+    fn score_correctly_drawn_to_the_frame() {
+        let mut frame = new_frame();
+        let mut score = Score::new();
+        score.draw(&mut frame);
+        assert_eq!(frame[10][0], '0');
+
+        let mut frame = new_frame();
+        score.add_points(5);
+        score.draw(&mut frame);
+        assert_eq!(frame[10][0], '5');
+    }
+}

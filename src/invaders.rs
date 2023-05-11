@@ -126,7 +126,7 @@ impl Drawable for Invaders {
 #[cfg(test)]
 mod test {
     use super::*;
-
+    use crate::frame::new_frame;
 
     #[test]
     fn test_an_invader_army_correctly_created() {
@@ -146,10 +146,40 @@ mod test {
     fn invaders_move_down_correctly() {
         let mut host = Invaders::new();
         let y : usize = host.army[0].y;
-        assert_eq!(host.army[0].x, 0);
-        /// for loop for 8 iterations
-        host.update(Duration::from_millis(2000));
-        // assert_eq!(host.army[0].x, 0);
+        assert_eq!(host.army[0].y, 2);
+        for _ in 0..4 {
+            host.update(Duration::from_millis(2001));
+        }
         assert_eq!(host.army[0].y, y + 1);
+    }
+
+    #[test]
+    fn invaders_change_direction_when_hitting_a_wall() {
+        let mut invaders = Invaders::new();
+        assert_eq!(invaders.direction, 1);
+        for _ in 0..4 { invaders.update(Duration::from_millis(2001)); }
+        assert_eq!(invaders.direction, -1);
+        for _ in 0..6 { invaders.update(Duration::from_millis(2001)); }
+        assert_eq!(invaders.direction, 1);
+    }
+
+    #[test]
+    fn invaders_draw_themselves_into_a_frame_correctly() {
+        let mut frame = new_frame();
+        let mut invaders = Invaders::new();
+        invaders.draw(&mut frame);
+        assert_eq!(frame[invaders.army[0].x][invaders.army[0].y], 'x');
+
+        let mut frame = new_frame();
+        invaders.update(Duration::from_millis(1001));
+        invaders.draw(&mut frame);
+        assert_eq!(frame[invaders.army[0].x][invaders.army[0].y], '+');
+    }
+
+    #[test]
+    fn invader_reaching_bottom_correctly_registered() {
+        let mut invaders = Invaders::new();
+        invaders.army[0].y = NUM_ROWS;
+        assert!(invaders.reached_bottom());
     }
 }

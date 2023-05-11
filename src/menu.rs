@@ -39,3 +39,36 @@ impl Drawable for Menu {
         }
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::frame::new_frame;
+
+    #[test]
+    fn change_option_works_correctly() {
+        let mut menu = Menu::new();
+        menu.change_option(true);
+        assert_eq!(menu.selection, 0);
+        menu.change_option(false);
+        assert_eq!(menu.selection, 1);
+        menu.change_option(false);
+        assert_eq!(menu.selection, 1);
+        menu.change_option(true);
+        assert_eq!(menu.selection, 0);
+    }
+
+    #[test]
+    fn menu_draws_itself_to_frame_correctly() {
+        let mut frame = new_frame();
+        let mut menu = Menu::new();
+        menu.draw(&mut frame);
+        assert_eq!(frame[0][0], '>');
+        assert_eq!(frame[0][1], ' ');
+        let mut frame = new_frame();
+        menu.change_option(false);
+        menu.draw(&mut frame);
+        assert_eq!(frame[0][0], ' ');
+        assert_eq!(frame[0][1], '>');
+    }
+}
