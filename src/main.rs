@@ -68,30 +68,16 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     'gameloop: loop {
         // Per-frame init
-        let delta = instant.elapsed();
+        let elapsed_time = instant.elapsed();
         instant = Instant::now();
         let mut curr_frame = new_frame();
 
         if in_menu {
             // Input handlers for the menu
-            while event::poll(Duration::default())? {
-                if let Event::Key(key_event) = event::read()? {
-                    match key_event.code {
-                        KeyCode::Up => menu.change_option(true),
-                        KeyCode::Down => menu.change_option(false),
-                        KeyCode::Char(' ') | KeyCode::Enter => {
-                            if menu.selection == 0 {
-                                in_menu = false;
-                            } else {
-                                break 'gameloop;
-                            }
-                        }
-                        _ => {}
-                    }
-                }
+            while event::poll(Duration::default())? {   // what does event poll do?   ASK
+                if let false = handle_menu(&mut in_menu, &mut menu) { break 'gameloop; }
             }
             menu.draw(&mut curr_frame);
-
             let _ = render_tx.send(curr_frame);
             thread::sleep(Duration::from_millis(1));
             continue;
@@ -99,54 +85,20 @@ fn main() -> Result<(), Box<dyn Error>> {
 
         // Input handlers for the game
         while event::poll(Duration::default())? {
-            if let Event::Key(key_event) = event::read()? {
-                match key_event.code {
-                    KeyCode::Left => player.move_left(),
-                    KeyCode::Right => player.move_right(),
-                    KeyCode::Char(' ') | KeyCode::Enter => {
-                        if player.shoot() {
-                            audio.play("pew");
-                        }
-                    }
-                    KeyCode::Esc | KeyCode::Char('q') => {
-                        audio.play("lose");
-                        reset_game(&mut in_menu, &mut player, &mut invaders);
-                    }
-                    _ => {}
-                }
-            }
+            handle_playing(&mut player, &mut invaders, &mut audio, &mut in_menu);  // passing in too many variables?
         }
 
         // Updates
-        player.update(delta);
-        if invaders.update(delta) {
-            audio.play("move");
-        }
-        let hits: u16 = player.detect_hits(&mut invaders);
-        if hits > 0 {
-            audio.play("explode");
-            score.add_points(hits);
-        }
+        update_actors(&mut player, &mut invaders, &mut audio, &mut score, elapsed_time);
+        
         // Draw & render
-
-        let drawables: Vec<&dyn Drawable> = vec![&player, &invaders, &score, &level];
-        for drawable in drawables {
-            drawable.draw(&mut curr_frame);
-        }
+        draw_actors_to_frame(&mut curr_frame, &player, &invaders, &score, &level);
         let _ = render_tx.send(curr_frame);
         thread::sleep(Duration::from_millis(1));
 
         // Win or lose?
-        if invaders.all_killed() {
-            if level.increment_level() {
-                audio.play("win");
-                break 'gameloop;
-            }
-            invaders = Invaders::new();
-        } else if invaders.reached_bottom() {
-            audio.play("lose");
-            reset_game(&mut in_menu, &mut player, &mut invaders);
-        }
+        let max_level_reached = handle_results(&mut invaders, &mut player, &mut audio, &mut level, &mut in_menu);
+        if max_level_reached { break 'gameloop; }
     }
 
     // Cleanup
@@ -157,4 +109,71 @@ fn main() -> Result<(), Box<dyn Error>> {
     stdout.execute(LeaveAlternateScreen)?;
     terminal::disable_raw_mode()?;
     Ok(())
+}
+
+fn handle_menu(in_menu: &mut bool, menu: &mut Menu) -> bool {
+    if let Event::Key(key_event) = event::read().unwrap() {
+        match key_event.code {
+            KeyCode::Up => menu.change_option(true),
+            KeyCode::Down => menu.change_option(false),
+            KeyCode::Char(' ') | KeyCode::Enter => {
+                *in_menu = false;
+                if menu.selection == 1 { return false; }
+            }
+            _ => {}
+        }
+    }
+    true
+}
+
+fn handle_playing(player: &mut Player, invaders: &mut Invaders, audio: &mut Audio, in_menu: &mut bool) {
+    if let Event::Key(key_event) = event::read().unwrap() {
+        match key_event.code {
+            KeyCode::Left => player.move_left(),
+            KeyCode::Right => player.move_right(),
+            KeyCode::Char(' ') | KeyCode::Enter => {
+                if player.shoot() {
+                    audio.play("pew");
+                }
+            }
+            KeyCode::Esc | KeyCode::Char('q') => {
+                audio.play("lose");
+                reset_game(in_menu, player, invaders);
+            }
+            _ => {}
+        }
+    }
+}
+
+fn update_actors(player: &mut Player, invaders: &mut Invaders, audio: &mut Audio, score: &mut Score, elapsed_time: Duration) {
+    player.update(elapsed_time);
+    if invaders.update(elapsed_time) {
+        audio.play("move");
+    }
+    let hits: u16 = player.detect_hits(invaders);
+    if hits > 0 {
+        audio.play("explode");
+        score.add_points(hits);
+    }
+}
+
+fn handle_results(invaders: &mut Invaders, player: &mut Player, audio: &mut Audio, level: &mut Level, in_menu: &mut bool) -> bool {
+    if invaders.all_killed() {
+        if level.increment_level() {
+            audio.play("win");
+            return true
+        } 
+        *invaders = Invaders::new();
+    } else if invaders.reached_bottom() {
+        audio.play("lose");
+        reset_game(in_menu, player, invaders);
+    }
+    false
+}
+
+fn draw_actors_to_frame(curr_frame: &mut Frame, player: &Player, invaders: &Invaders, score: &Score, level: &Level) {
+    let drawables: Vec<&dyn Drawable> = vec![player, invaders, score, level];
+    for drawable in drawables {
+        drawable.draw(curr_frame);
+    }
 }
